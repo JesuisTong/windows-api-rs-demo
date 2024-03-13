@@ -1,10 +1,6 @@
 #![deny(clippy::all)]
-
 use napi_derive::napi;
-
-#[cfg(target_os = "windows")]
-#[path = "windows/mod.rs"]
-mod platform;
+use sysinfo::{ProcessRefreshKind, System};
 
 #[napi]
 pub fn plus_100(input: u32) -> u32 {
@@ -13,5 +9,7 @@ pub fn plus_100(input: u32) -> u32 {
 
 #[napi]
 pub fn get_process_exsits(process_name: String) -> bool {
-  platform::get_process_id_by_name(&process_name) != 0
+  let mut sys = System::new();
+  sys.refresh_processes_specifics(ProcessRefreshKind::new());
+  sys.processes_by_exact_name(&process_name).count() != 0
 }

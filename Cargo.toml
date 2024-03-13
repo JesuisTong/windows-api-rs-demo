@@ -13,6 +13,7 @@ crate-type = ["cdylib"]
 thiserror   = "1.0"
 napi        = { version = "2.13", default-features = false, features = ["napi4"] }
 napi-derive = "2.13"
+sysinfo = "0.30.7"
 
 [target."cfg(target_os = \"windows\")".dependencies.windows]
 version = "0.52"
@@ -22,10 +23,6 @@ features = [
     "Win32_System_Diagnostics_ToolHelp",
     "Win32_System_WindowsProgramming",
     "Win32_Foundation",
-    "Win32_Graphics_Gdi",
-    "Win32_Graphics_Dwm",
-    "Win32_UI_WindowsAndMessaging",
-    "Win32_Storage_Xps",
     "Win32_System_Threading",
     "Win32_System_ProcessStatus",
     "Win32_Storage_FileSystem",
