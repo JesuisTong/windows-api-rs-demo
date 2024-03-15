@@ -20,6 +20,8 @@ pub fn get_process_exsits(process_name: String) -> bool {
 
 #[cfg(target_os = "windows")]
 #[napi]
-pub fn read_registry() -> u32 {
+pub fn read_registry(reg_key_root: windows::HkeyMap, reg_path: String, reg_key_name: String, reg_key_value_type: windows::RegType) {
+
+  windows::read_registry(reg_key_root, &reg_path, &reg_key_name, reg_key_value_type);
   windows::read_registry()
 }
