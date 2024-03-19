@@ -1,3 +1,4 @@
+use napi::bindgen_prelude::FromNapiValue;
 use windows::{
   core::{w, Error, HRESULT, HSTRING, PCWSTR},
   Win32::System::Registry::{
@@ -13,6 +14,10 @@ pub enum HkeyMap {
   HKCU,
   HKLM,
   HKCR,
+}
+
+impl FromNapiValue for HkeyMap {
+
 }
 
 pub enum RegType {

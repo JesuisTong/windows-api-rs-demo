@@ -271,7 +271,7 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { plus100, getProcessExsits } = nativeBinding
+const { plus100, getProcessExists } = nativeBinding
 
 module.exports.plus100 = plus100
-module.exports.getProcessExsits = getProcessExsits
+module.exports.getProcessExists = getProcessExists
