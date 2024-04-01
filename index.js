@@ -32,10 +32,10 @@ switch (platform) {
   case 'android':
     switch (arch) {
       case 'arm64':
-        localFileExisted = existsSync(join(__dirname, 'package-template.android-arm64.node'))
+        localFileExisted = existsSync(join(__dirname, 'fepro-addon.android-arm64.node'))
         try {
           if (localFileExisted) {
-            nativeBinding = require('./package-template.android-arm64.node')
+            nativeBinding = require('./fepro-addon.android-arm64.node')
           } else {
             nativeBinding = require('windows-api-rs-demo-android-arm64')
           }
@@ -44,10 +44,10 @@ switch (platform) {
         }
         break
       case 'arm':
-        localFileExisted = existsSync(join(__dirname, 'package-template.android-arm-eabi.node'))
+        localFileExisted = existsSync(join(__dirname, 'fepro-addon.android-arm-eabi.node'))
         try {
           if (localFileExisted) {
-            nativeBinding = require('./package-template.android-arm-eabi.node')
+            nativeBinding = require('./fepro-addon.android-arm-eabi.node')
           } else {
             nativeBinding = require('windows-api-rs-demo-android-arm-eabi')
           }
@@ -62,10 +62,10 @@ switch (platform) {
   case 'win32':
     switch (arch) {
       case 'x64':
-        localFileExisted = existsSync(join(__dirname, 'package-template.win32-x64-msvc.node'))
+        localFileExisted = existsSync(join(__dirname, 'fepro-addon.win32-x64-msvc.node'))
         try {
           if (localFileExisted) {
-            nativeBinding = require('./package-template.win32-x64-msvc.node')
+            nativeBinding = require('./fepro-addon.win32-x64-msvc.node')
           } else {
             nativeBinding = require('windows-api-rs-demo-win32-x64-msvc')
           }
@@ -74,10 +74,10 @@ switch (platform) {
         }
         break
       case 'ia32':
-        localFileExisted = existsSync(join(__dirname, 'package-template.win32-ia32-msvc.node'))
+        localFileExisted = existsSync(join(__dirname, 'fepro-addon.win32-ia32-msvc.node'))
         try {
           if (localFileExisted) {
-            nativeBinding = require('./package-template.win32-ia32-msvc.node')
+            nativeBinding = require('./fepro-addon.win32-ia32-msvc.node')
           } else {
             nativeBinding = require('windows-api-rs-demo-win32-ia32-msvc')
           }
@@ -86,10 +86,10 @@ switch (platform) {
         }
         break
       case 'arm64':
-        localFileExisted = existsSync(join(__dirname, 'package-template.win32-arm64-msvc.node'))
+        localFileExisted = existsSync(join(__dirname, 'fepro-addon.win32-arm64-msvc.node'))
         try {
           if (localFileExisted) {
-            nativeBinding = require('./package-template.win32-arm64-msvc.node')
+            nativeBinding = require('./fepro-addon.win32-arm64-msvc.node')
           } else {
             nativeBinding = require('windows-api-rs-demo-win32-arm64-msvc')
           }
@@ -102,10 +102,10 @@ switch (platform) {
     }
     break
   case 'darwin':
-    localFileExisted = existsSync(join(__dirname, 'package-template.darwin-universal.node'))
+    localFileExisted = existsSync(join(__dirname, 'fepro-addon.darwin-universal.node'))
     try {
       if (localFileExisted) {
-        nativeBinding = require('./package-template.darwin-universal.node')
+        nativeBinding = require('./fepro-addon.darwin-universal.node')
       } else {
         nativeBinding = require('windows-api-rs-demo-darwin-universal')
       }
@@ -113,10 +113,10 @@ switch (platform) {
     } catch {}
     switch (arch) {
       case 'x64':
-        localFileExisted = existsSync(join(__dirname, 'package-template.darwin-x64.node'))
+        localFileExisted = existsSync(join(__dirname, 'fepro-addon.darwin-x64.node'))
         try {
           if (localFileExisted) {
-            nativeBinding = require('./package-template.darwin-x64.node')
+            nativeBinding = require('./fepro-addon.darwin-x64.node')
           } else {
             nativeBinding = require('windows-api-rs-demo-darwin-x64')
           }
@@ -125,10 +125,10 @@ switch (platform) {
         }
         break
       case 'arm64':
-        localFileExisted = existsSync(join(__dirname, 'package-template.darwin-arm64.node'))
+        localFileExisted = existsSync(join(__dirname, 'fepro-addon.darwin-arm64.node'))
         try {
           if (localFileExisted) {
-            nativeBinding = require('./package-template.darwin-arm64.node')
+            nativeBinding = require('./fepro-addon.darwin-arm64.node')
           } else {
             nativeBinding = require('windows-api-rs-demo-darwin-arm64')
           }
@@ -144,10 +144,10 @@ switch (platform) {
     if (arch !== 'x64') {
       throw new Error(`Unsupported architecture on FreeBSD: ${arch}`)
     }
-    localFileExisted = existsSync(join(__dirname, 'package-template.freebsd-x64.node'))
+    localFileExisted = existsSync(join(__dirname, 'fepro-addon.freebsd-x64.node'))
     try {
       if (localFileExisted) {
-        nativeBinding = require('./package-template.freebsd-x64.node')
+        nativeBinding = require('./fepro-addon.freebsd-x64.node')
       } else {
         nativeBinding = require('windows-api-rs-demo-freebsd-x64')
       }
@@ -159,10 +159,10 @@ switch (platform) {
     switch (arch) {
       case 'x64':
         if (isMusl()) {
-          localFileExisted = existsSync(join(__dirname, 'package-template.linux-x64-musl.node'))
+          localFileExisted = existsSync(join(__dirname, 'fepro-addon.linux-x64-musl.node'))
           try {
             if (localFileExisted) {
-              nativeBinding = require('./package-template.linux-x64-musl.node')
+              nativeBinding = require('./fepro-addon.linux-x64-musl.node')
             } else {
               nativeBinding = require('windows-api-rs-demo-linux-x64-musl')
             }
@@ -170,10 +170,10 @@ switch (platform) {
             loadError = e
           }
         } else {
-          localFileExisted = existsSync(join(__dirname, 'package-template.linux-x64-gnu.node'))
+          localFileExisted = existsSync(join(__dirname, 'fepro-addon.linux-x64-gnu.node'))
           try {
             if (localFileExisted) {
-              nativeBinding = require('./package-template.linux-x64-gnu.node')
+              nativeBinding = require('./fepro-addon.linux-x64-gnu.node')
             } else {
               nativeBinding = require('windows-api-rs-demo-linux-x64-gnu')
             }
@@ -184,10 +184,10 @@ switch (platform) {
         break
       case 'arm64':
         if (isMusl()) {
-          localFileExisted = existsSync(join(__dirname, 'package-template.linux-arm64-musl.node'))
+          localFileExisted = existsSync(join(__dirname, 'fepro-addon.linux-arm64-musl.node'))
           try {
             if (localFileExisted) {
-              nativeBinding = require('./package-template.linux-arm64-musl.node')
+              nativeBinding = require('./fepro-addon.linux-arm64-musl.node')
             } else {
               nativeBinding = require('windows-api-rs-demo-linux-arm64-musl')
             }
@@ -195,10 +195,10 @@ switch (platform) {
             loadError = e
           }
         } else {
-          localFileExisted = existsSync(join(__dirname, 'package-template.linux-arm64-gnu.node'))
+          localFileExisted = existsSync(join(__dirname, 'fepro-addon.linux-arm64-gnu.node'))
           try {
             if (localFileExisted) {
-              nativeBinding = require('./package-template.linux-arm64-gnu.node')
+              nativeBinding = require('./fepro-addon.linux-arm64-gnu.node')
             } else {
               nativeBinding = require('windows-api-rs-demo-linux-arm64-gnu')
             }
@@ -208,10 +208,10 @@ switch (platform) {
         }
         break
       case 'arm':
-        localFileExisted = existsSync(join(__dirname, 'package-template.linux-arm-gnueabihf.node'))
+        localFileExisted = existsSync(join(__dirname, 'fepro-addon.linux-arm-gnueabihf.node'))
         try {
           if (localFileExisted) {
-            nativeBinding = require('./package-template.linux-arm-gnueabihf.node')
+            nativeBinding = require('./fepro-addon.linux-arm-gnueabihf.node')
           } else {
             nativeBinding = require('windows-api-rs-demo-linux-arm-gnueabihf')
           }
@@ -221,10 +221,10 @@ switch (platform) {
         break
       case 'riscv64':
         if (isMusl()) {
-          localFileExisted = existsSync(join(__dirname, 'package-template.linux-riscv64-musl.node'))
+          localFileExisted = existsSync(join(__dirname, 'fepro-addon.linux-riscv64-musl.node'))
           try {
             if (localFileExisted) {
-              nativeBinding = require('./package-template.linux-riscv64-musl.node')
+              nativeBinding = require('./fepro-addon.linux-riscv64-musl.node')
             } else {
               nativeBinding = require('windows-api-rs-demo-linux-riscv64-musl')
             }
@@ -232,10 +232,10 @@ switch (platform) {
             loadError = e
           }
         } else {
-          localFileExisted = existsSync(join(__dirname, 'package-template.linux-riscv64-gnu.node'))
+          localFileExisted = existsSync(join(__dirname, 'fepro-addon.linux-riscv64-gnu.node'))
           try {
             if (localFileExisted) {
-              nativeBinding = require('./package-template.linux-riscv64-gnu.node')
+              nativeBinding = require('./fepro-addon.linux-riscv64-gnu.node')
             } else {
               nativeBinding = require('windows-api-rs-demo-linux-riscv64-gnu')
             }
@@ -245,10 +245,10 @@ switch (platform) {
         }
         break
       case 's390x':
-        localFileExisted = existsSync(join(__dirname, 'package-template.linux-s390x-gnu.node'))
+        localFileExisted = existsSync(join(__dirname, 'fepro-addon.linux-s390x-gnu.node'))
         try {
           if (localFileExisted) {
-            nativeBinding = require('./package-template.linux-s390x-gnu.node')
+            nativeBinding = require('./fepro-addon.linux-s390x-gnu.node')
           } else {
             nativeBinding = require('windows-api-rs-demo-linux-s390x-gnu')
           }
@@ -271,7 +271,11 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { plus100, getProcessExists } = nativeBinding
+const { getProcessExists, HkeyMap, RegType, readRegistry, writeRegistry, showWindowByTitle } = nativeBinding
 
-module.exports.plus100 = plus100
 module.exports.getProcessExists = getProcessExists
+module.exports.HkeyMap = HkeyMap
+module.exports.RegType = RegType
+module.exports.readRegistry = readRegistry
+module.exports.writeRegistry = writeRegistry
+module.exports.showWindowByTitle = showWindowByTitle

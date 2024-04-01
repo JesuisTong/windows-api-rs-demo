@@ -18,7 +18,7 @@
     "index.js"
   ],
   "napi": {
-    "name": "package-template",
+    "name": "fepro-addon",
     "triples": {
       "defaults": true,
       "additional": [

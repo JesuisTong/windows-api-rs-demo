@@ -1,10 +1,16 @@
-use napi::bindgen_prelude::FromNapiValue;
+use std::{ffi::OsStr, os::windows::ffi::OsStrExt};
+
 use windows::{
-  core::{w, Error, HRESULT, HSTRING, PCWSTR},
-  Win32::System::Registry::{
-    RegGetValueW, RegOpenKeyExW, HKEY, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE,
-    KEY_ALL_ACCESS, KEY_READ, REG_SZ, REG_VALUE_TYPE, RRF_RT_REG_BINARY, RRF_RT_REG_DWORD,
-    RRF_RT_REG_EXPAND_SZ, RRF_RT_REG_MULTI_SZ, RRF_RT_REG_QWORD, RRF_RT_REG_SZ,
+  core::{Error, HRESULT, HSTRING, PCWSTR},
+  Win32::{
+    Foundation::HWND,
+    System::Registry::{
+      RegCloseKey, RegGetValueW, RegOpenKeyExW, RegSetValueExW, HKEY, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_READ, KEY_WRITE, REG_BINARY, REG_DWORD, REG_EXPAND_SZ, REG_MULTI_SZ, REG_SZ, REG_VALUE_TYPE, RRF_RT_REG_BINARY, RRF_RT_REG_DWORD, RRF_RT_REG_EXPAND_SZ, RRF_RT_REG_MULTI_SZ, RRF_RT_REG_SZ
+    },
+    UI::WindowsAndMessaging::{
+      FindWindowW, SetWindowPos, ShowWindow,
+      SWP_NOMOVE, SWP_NOSIZE, SWP_SHOWWINDOW, SW_RESTORE, SW_SHOW,
+    },
   },
 };
 
@@ -14,10 +20,6 @@ pub enum HkeyMap {
   HKCU,
   HKLM,
   HKCR,
-}
-
-impl FromNapiValue for HkeyMap {
-
 }
 
 pub enum RegType {
@@ -30,10 +32,9 @@ pub enum RegType {
 
 #[derive(Debug)]
 pub enum RegValueResult {
-    Int(i32),
-    Str(String),
-    VecU8(Vec<u8>),
-    None,
+  Int(i32),
+  Str(String),
+  VecU8(Vec<u8>),
 }
 
 trait IntoPCWSTR {
@@ -79,7 +80,7 @@ pub fn read_registry(
 
     RegOpenKeyExW(reg_key_root, lpsubkey, 0, KEY_READ, &mut hkey as *mut _)?;
 
-    match dwflags {
+    let res = match dwflags {
       RRF_RT_REG_SZ | RRF_RT_REG_EXPAND_SZ | RRF_RT_REG_MULTI_SZ => {
         let mut pvdata = [0u16; BUFFRE_SIZE * 4];
         let mut pcbdata = (BUFFRE_SIZE * 4 * std::mem::size_of_val(&pvdata[0])) as u32;
@@ -93,8 +94,10 @@ pub fn read_registry(
           Some(&mut pcbdata),
         )?;
         let len = (pcbdata as usize - 1) / 2;
-        Ok(Some(RegValueResult::Str(String::from_utf16_lossy(&pvdata[..len].to_vec()))))
-      },
+        Ok(Some(RegValueResult::Str(String::from_utf16_lossy(
+          &pvdata[..len].to_vec(),
+        ))))
+      }
       RRF_RT_REG_BINARY => {
         let mut pvdata = [0u8; BUFFRE_SIZE];
         let mut pcbdata = (BUFFRE_SIZE * std::mem::size_of_val(&pvdata[0])) as u32;
@@ -107,8 +110,10 @@ pub fn read_registry(
           Some(pvdata.as_mut_ptr() as *mut _),
           Some(&mut pcbdata),
         )?;
-        Ok(Some(RegValueResult::VecU8(pvdata[..pcbdata as usize].to_vec())))
-      },
+        Ok(Some(RegValueResult::VecU8(
+          pvdata[..pcbdata as usize].to_vec(),
+        )))
+      }
       RRF_RT_REG_DWORD => {
         let mut pvdata = [0u8; 4];
         let mut pcbdata = pvdata.len() as u32;
@@ -122,10 +127,116 @@ pub fn read_registry(
           Some(&mut pcbdata),
         )?;
         Ok(Some(RegValueResult::Int(i32::from_le_bytes(pvdata))))
-      },
+      }
       _ => Err(Error::new(HRESULT(0), HSTRING::default())),
-    }
+    };
+
+    RegCloseKey(hkey)?;
+
+    res
   };
 
   result
+}
+
+pub fn write_registry(
+  reg_key_root: HkeyMap,
+  reg_path: &str,
+  reg_key_name: &str,
+  reg_key_value_type: RegType,
+  reg_key_value: RegValueResult,
+) -> Result<(), Error> {
+  let reg_key_root = match reg_key_root {
+    HkeyMap::HKCU => HKEY_CURRENT_USER,
+    HkeyMap::HKLM => HKEY_LOCAL_MACHINE,
+    HkeyMap::HKCR => HKEY_CLASSES_ROOT,
+  };
+
+  let dw_type = match reg_key_value_type {
+    RegType::RegSz => REG_SZ,
+    RegType::RegExpandSz => REG_EXPAND_SZ,
+    RegType::RegMultiSz => REG_MULTI_SZ,
+    RegType::RegBinary => REG_BINARY,
+    RegType::RegDword => REG_DWORD,
+  };
+
+  let result: Result<(), Error> = unsafe {
+    let mut hkey = HKEY::default();
+    let (lpsubkey, _) = reg_path.into_pcwstr();
+    let (lpvaluename, _) = reg_key_name.into_pcwstr();
+
+    RegOpenKeyExW(reg_key_root, lpsubkey, 0, KEY_WRITE, &mut hkey as *mut _)?;
+
+    let res = match dw_type {
+      REG_SZ | REG_EXPAND_SZ | REG_MULTI_SZ => {
+        if let RegValueResult::Str(val) = reg_key_value {
+          let val = OsStr::new(&val).encode_wide().chain(std::iter::once(0)).collect::<Vec<_>>();
+          let val =  val.align_to::<u8>().1;
+          RegSetValueExW(hkey, lpvaluename, 0u32, dw_type, Some(val))?;
+          Ok(())
+        } else {
+          return Err(Error::new(HRESULT(1), HSTRING::default()));
+        }
+      }
+      REG_BINARY => {
+        if let RegValueResult::VecU8(val) = reg_key_value {
+          RegSetValueExW(hkey, lpvaluename, 0u32, dw_type, Some(val.as_ref()))?;
+          Ok(())
+        } else {
+          return Err(Error::new(HRESULT(3), HSTRING::default()));
+        }
+      }
+      REG_DWORD => {
+        if let RegValueResult::Int(val) = reg_key_value {
+          RegSetValueExW(hkey, lpvaluename, 0u32, dw_type, Some(val.to_ne_bytes().as_ref()))?;
+          Ok(())
+        } else {
+          return Err(Error::new(HRESULT(4), HSTRING::default()));
+        }
+      }
+      _ => Err(Error::new(HRESULT(0), HSTRING::default())),
+    };
+
+    RegCloseKey(hkey)?;
+
+    res
+  };
+
+  result
+}
+
+/**
+ * 强制窗体显示
+ * TODO: 窗体可以响应点击事件
+ */
+pub fn show_window_force(window_title: &str) {
+  unsafe {
+    let (pcwstr, _) = window_title.into_pcwstr();
+    let hwnd = FindWindowW(None, pcwstr);
+    println!("hwnd: {:?}", hwnd);
+    let _ = SetWindowPos(
+      hwnd,
+      HWND(-1),
+      0,
+      0,
+      0,
+      0,
+      SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW,
+    )
+    .is_ok();
+    ShowWindow(hwnd, SW_RESTORE);
+    ShowWindow(hwnd, SW_RESTORE);
+    ShowWindow(hwnd, SW_SHOW);
+    ShowWindow(hwnd, SW_SHOW);
+    let _ = SetWindowPos(
+      hwnd,
+      HWND(-2),
+      0,
+      0,
+      0,
+      0,
+      SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW,
+    )
+    .is_ok();
+  }
 }
