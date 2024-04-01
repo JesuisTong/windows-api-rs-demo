@@ -1,6 +1,10 @@
 #![deny(clippy::all)]
+use napi::{
+  assert_type_of,
+  bindgen_prelude::{FromNapiValue, Null, Buffer,ToNapiValue},
+  JsBuffer, JsNumber, JsObject, JsString, JsUnknown, NapiRaw, NapiValue, Result, ValueType,
+};
 use napi_derive::napi;
-use napi::Env;
 use sysinfo::{ProcessRefreshKind, System};
 
 #[cfg(target_os = "windows")]
@@ -14,65 +18,133 @@ pub fn get_process_exists(process_name: String) -> bool {
   sys.processes_by_exact_name(&process_name).count() != 0
 }
 
-// redefine https://github.com/napi-rs/napi-rs/issues/1463
-#[napi]
-pub enum HkeyMap {
-    HKCU,
-    HKLM,
-    HKCR,
+impl FromNapiValue for windows::HkeyMap {
+  unsafe fn from_napi_value(
+    env: napi::sys::napi_env,
+    napi_val: napi::sys::napi_value,
+  ) -> Result<Self> {
+    let num = JsNumber::from_napi_value(env, napi_val)?;
+    let num = num.get_int32()?;
+    match num {
+      0 => Ok(windows::HkeyMap::HKCU),
+      1 => Ok(windows::HkeyMap::HKLM),
+      2 => Ok(windows::HkeyMap::HKCR),
+      _ => Err(napi::Error::new(
+        napi::Status::InvalidArg,
+        format!("invalid Hkey {num}"),
+      )),
+    }
+  }
 }
 
-// redefine https://github.com/napi-rs/napi-rs/issues/1463
-#[napi]
-pub enum RegType {
-    RegSz,
-    RegExpandSz,
-    RegMultiSz,
-    RegBinary,
-    RegDword,
+impl FromNapiValue for windows::RegType {
+  unsafe fn from_napi_value(
+    env: napi::sys::napi_env,
+    napi_val: napi::sys::napi_value,
+  ) -> Result<Self> {
+    let num = JsNumber::from_napi_value(env, napi_val)?;
+    let num = num.get_int32()?;
+    match num {
+      0 => Ok(windows::RegType::RegSz),
+      1 => Ok(windows::RegType::RegExpandSz),
+      2 => Ok(windows::RegType::RegMultiSz),
+      3 => Ok(windows::RegType::RegBinary),
+      4 => Ok(windows::RegType::RegDword),
+      _ => Err(napi::Error::new(
+        napi::Status::InvalidArg,
+        format!("invalid RegType {num}"),
+      )),
+    }
+  }
+}
+
+impl FromNapiValue for windows::RegValueResult {
+  unsafe fn from_napi_value(
+    env: napi::sys::napi_env,
+    napi_val: napi::sys::napi_value,
+  ) -> Result<Self> {
+    let is_i32 = assert_type_of!(env, napi_val, ValueType::Number);
+    let is_str = assert_type_of!(env, napi_val, ValueType::String);
+    let is_obj = assert_type_of!(env, napi_val, ValueType::Object);
+    let is_unknown = assert_type_of!(env, napi_val, ValueType::Unknown);
+    let is_null = assert_type_of!(env, napi_val, ValueType::Null);
+
+    if let Ok(()) = is_i32 {
+      let num = JsNumber::from_napi_value(env, napi_val)?;
+      return Ok(windows::RegValueResult::Int(num.get_int32()?));
+    }
+    if let Ok(()) = is_str {
+      let str = JsString::from_napi_value(env, napi_val)?;
+      return Ok(windows::RegValueResult::Str(
+        str.into_utf8()?.as_str()?.to_string(),
+      ));
+    }
+    if let Ok(()) = is_null {
+      return Ok(windows::RegValueResult::Null);
+    }
+    if let Ok(()) = is_obj {
+      let obj = JsObject::from_napi_value(env, napi_val)?;
+      let bool = obj.is_buffer()?;
+      if bool {
+        let v = JsBuffer::from_raw(env, obj.raw())?;
+        return Ok(windows::RegValueResult::VecU8(v.into_value()?.to_vec()));
+      }
+      return Err(napi::Error::new(
+        napi::Status::InvalidArg,
+        "invalid RegValueResult",
+      ));
+    }
+    if let Ok(()) = is_unknown {
+      let unknown = JsUnknown::from_napi_value(env, napi_val)?;
+      match unknown.get_type()? {
+        napi::ValueType::Object => {
+          let v = unknown.cast::<napi::JsBuffer>();
+          return Ok(windows::RegValueResult::VecU8(v.into_value()?.to_vec()));
+        }
+        _ => {
+          return Err(napi::Error::new(
+            napi::Status::InvalidArg,
+            "invalid RegValueResult",
+          ));
+        }
+      }
+    }
+    Err(napi::Error::new(
+      napi::Status::InvalidArg,
+      "invalid RegValueResult",
+    ))
+  }
+}
+
+impl ToNapiValue for windows::RegValueResult {
+  unsafe fn to_napi_value(env: napi::sys::napi_env, val: Self) -> Result<napi::sys::napi_value> {
+    match val {
+      windows::RegValueResult::Int(num) => unsafe { ToNapiValue::to_napi_value(env, num) },
+      windows::RegValueResult::Str(str) => unsafe { ToNapiValue::to_napi_value(env, &str) },
+      windows::RegValueResult::VecU8(vec_u8) => unsafe { Buffer::to_napi_value(env, Buffer::from(vec_u8)) },
+      windows::RegValueResult::Null => unsafe { Null::to_napi_value(env, Null) },
+    }
+  }
 }
 
 #[cfg(target_os = "windows")]
-#[napi]
+#[napi(ts_return_type = "unknown")]
 pub fn read_registry(
-  env: Env,
-  #[napi(ts_arg_type = "HkeyMap")]
-  reg_key_root: i32,
+  #[napi(ts_arg_type = "0|1|2")] reg_key_root: windows::HkeyMap,
   reg_path: String,
   reg_key_name: String,
-  #[napi(ts_arg_type = "RegType")]
-  reg_key_value_type: i32
-) -> napi::Result<napi::JsUnknown> {
-  let reg_key_root = match reg_key_root {
-    0 => windows::HkeyMap::HKCU,
-    1 => windows::HkeyMap::HKLM,
-    2 => windows::HkeyMap::HKCR,
-    _ => windows::HkeyMap::HKLM,
-  };
-  let reg_key_value_type = match reg_key_value_type {
-    0 => windows::RegType::RegSz,
-    1 => windows::RegType::RegExpandSz,
-    2 => windows::RegType::RegMultiSz,
-    3 => windows::RegType::RegBinary,
-    4 => windows::RegType::RegDword,
-    _ => windows::RegType::RegSz,
-  };
-
+  #[napi(ts_arg_type = "0|1|2|3|4")] reg_key_value_type: windows::RegType,
+) -> Result<windows::RegValueResult> {
   match windows::read_registry(reg_key_root, &reg_path, &reg_key_name, reg_key_value_type) {
-    Ok(value) => {
-      if let Some(value) = value {
-        match value {
-          windows::RegValueResult::Int(val) => env.create_int32(val).map(|v| v.into_unknown()),
-          windows::RegValueResult::Str(val) => env.create_string(&val).map(|v| v.into_unknown()),
-          windows::RegValueResult::VecU8(val) => env.create_buffer_with_data(val).map(|v| v.into_unknown()),
-        }
-      } else {
-        env.get_null().map(|v| v.into_unknown())
+    Ok(result) => {
+      if let Some(result) = result {
+        return Ok(result);
       }
-    },
+      Ok(windows::RegValueResult::Null)
+    }
     Err(err) => {
-      println!("Error: {:?}", err.message());
-      env.get_null().map(|v| v.into_unknown())
+      eprintln!("read_registry error: {:?}", err.message().to_string());
+      Ok(windows::RegValueResult::Null)
     },
   }
 }
@@ -80,63 +152,40 @@ pub fn read_registry(
 #[cfg(target_os = "windows")]
 #[napi]
 pub fn write_registry(
-  #[napi(ts_arg_type = "HkeyMap")]
-  reg_key_root: i32,
+  #[napi(ts_arg_type = "0|1|2")] reg_key_root: windows::HkeyMap,
   reg_path: String,
   reg_key_name: String,
-  #[napi(ts_arg_type = "RegType")]
-  reg_key_value_type: i32,
-  #[napi(ts_arg_type = "unknown")]
-  reg_key_value: napi::JsUnknown
-) -> napi::Result<()> {
-  let reg_key_root = match reg_key_root {
-    0 => windows::HkeyMap::HKCU,
-    1 => windows::HkeyMap::HKLM,
-    2 => windows::HkeyMap::HKCR,
-    _ => windows::HkeyMap::HKLM,
-  };
-  let reg_key_value_type = match reg_key_value_type {
-    0 => windows::RegType::RegSz,
-    1 => windows::RegType::RegExpandSz,
-    2 => windows::RegType::RegMultiSz,
-    3 => windows::RegType::RegBinary,
-    4 => windows::RegType::RegDword,
-    _ => windows::RegType::RegSz,
-  };
+  #[napi(ts_arg_type = "0|1|2|3|4")] reg_key_value_type: windows::RegType,
+  #[napi(ts_arg_type = "unknown")] reg_key_value: windows::RegValueResult,
+) -> Result<()> {
+  windows::write_registry(
+    reg_key_root,
+    &reg_path,
+    &reg_key_name,
+    reg_key_value_type,
+    reg_key_value,
+  )
+  .map_err(|err| {
+    napi::Error::new(
+      napi::Status::FunctionExpected,
+      format!("write_registry error: {:?}", err.message().to_string()),
+    )
+  })
+}
 
-  unsafe {
-    match reg_key_value.get_type()? {
-      napi::ValueType::Number => {
-        let val = reg_key_value.cast::<napi::JsNumber>().get_int32()?;
-        windows::write_registry(reg_key_root, &reg_path, &reg_key_name, reg_key_value_type, windows::RegValueResult::Int(val)).map_err(|err| {
-          napi::Error::from_reason(format!("write registry number error: {:?}", err.message().to_string_lossy()))
-        })
-      },
-      napi::ValueType::String => {
-        let val = reg_key_value.cast::<napi::JsString>().into_utf8()?;
-        windows::write_registry(reg_key_root, &reg_path, &reg_key_name, reg_key_value_type, windows::RegValueResult::Str(val.as_str()?.to_string())).map_err(|err| {
-          napi::Error::from_reason(format!("write registry string error: {:?}", err.message().to_string_lossy()))
-        })
-      },
-      napi::ValueType::Object => {
-        if let Ok(bol) = reg_key_value.is_buffer() {
-          if bol {
-            let buffer = reg_key_value.cast::<napi::JsBuffer>();
-            windows::write_registry(reg_key_root, &reg_path, &reg_key_name, reg_key_value_type, windows::RegValueResult::VecU8(buffer.into_value()?.to_vec())).map_err(|err| {
-              napi::Error::from_reason(format!("write registry buffer error: {:?}", err.message().to_string_lossy()))
-            })
-          } else {
-            Err(napi::Error::from_reason("write registry buffer is not buffer object"))
-          }
-        } else {
-          Err(napi::Error::from_reason("write registry buffer is not buffer object"))
-        }
-      }
-      _ => {
-        Err(napi::Error::from_reason("unknown error"))
-      }
-    }
-  }
+#[cfg(target_os = "windows")]
+#[napi]
+pub fn delete_registry(
+  #[napi(ts_arg_type = "0|1|2")] reg_key_root: windows::HkeyMap,
+  reg_path: String,
+  reg_key_name: String,
+) -> Result<()> {
+  windows::delete_registry(reg_key_root, &reg_path, &reg_key_name).map_err(|err| {
+    napi::Error::new(
+      napi::Status::FunctionExpected,
+      format!("delete_registry error: {:?}", err.message().to_string()),
+    )
+  })
 }
 
 #[cfg(target_os = "windows")]

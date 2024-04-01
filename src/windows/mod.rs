@@ -5,11 +5,11 @@ use windows::{
   Win32::{
     Foundation::HWND,
     System::Registry::{
-      RegCloseKey, RegGetValueW, RegOpenKeyExW, RegSetValueExW, HKEY, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_READ, KEY_WRITE, REG_BINARY, REG_DWORD, REG_EXPAND_SZ, REG_MULTI_SZ, REG_SZ, REG_VALUE_TYPE, RRF_RT_REG_BINARY, RRF_RT_REG_DWORD, RRF_RT_REG_EXPAND_SZ, RRF_RT_REG_MULTI_SZ, RRF_RT_REG_SZ
+      RegCloseKey, RegDeleteKeyValueW, RegGetValueW, RegOpenKeyExW, RegSetValueExW, HKEY, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_ALL_ACCESS, KEY_READ, KEY_WRITE, REG_BINARY, REG_DWORD, REG_EXPAND_SZ, REG_MULTI_SZ, REG_SZ, REG_VALUE_TYPE, RRF_RT_REG_BINARY, RRF_RT_REG_DWORD, RRF_RT_REG_EXPAND_SZ, RRF_RT_REG_MULTI_SZ, RRF_RT_REG_SZ
     },
     UI::WindowsAndMessaging::{
-      FindWindowW, SetWindowPos, ShowWindow,
-      SWP_NOMOVE, SWP_NOSIZE, SWP_SHOWWINDOW, SW_RESTORE, SW_SHOW,
+      FindWindowW, SetWindowPos, ShowWindow, SWP_NOMOVE, SWP_NOSIZE, SWP_SHOWWINDOW, SW_RESTORE,
+      SW_SHOW,
     },
   },
 };
@@ -35,6 +35,7 @@ pub enum RegValueResult {
   Int(i32),
   Str(String),
   VecU8(Vec<u8>),
+  Null,
 }
 
 trait IntoPCWSTR {
@@ -72,7 +73,7 @@ pub fn read_registry(
     RegType::RegDword => RRF_RT_REG_DWORD,
   };
 
-  let result: Result<Option<RegValueResult>, Error> = unsafe {
+  unsafe {
     let mut hkey = HKEY::default();
     let mut pdwtype: REG_VALUE_TYPE = Default::default();
     let (lpsubkey, _) = reg_path.into_pcwstr();
@@ -134,9 +135,7 @@ pub fn read_registry(
     RegCloseKey(hkey)?;
 
     res
-  };
-
-  result
+  }
 }
 
 pub fn write_registry(
@@ -160,7 +159,7 @@ pub fn write_registry(
     RegType::RegDword => REG_DWORD,
   };
 
-  let result: Result<(), Error> = unsafe {
+  unsafe {
     let mut hkey = HKEY::default();
     let (lpsubkey, _) = reg_path.into_pcwstr();
     let (lpvaluename, _) = reg_key_name.into_pcwstr();
@@ -170,8 +169,11 @@ pub fn write_registry(
     let res = match dw_type {
       REG_SZ | REG_EXPAND_SZ | REG_MULTI_SZ => {
         if let RegValueResult::Str(val) = reg_key_value {
-          let val = OsStr::new(&val).encode_wide().chain(std::iter::once(0)).collect::<Vec<_>>();
-          let val =  val.align_to::<u8>().1;
+          let val = OsStr::new(&val)
+            .encode_wide()
+            .chain(std::iter::once(0))
+            .collect::<Vec<_>>();
+          let val = val.align_to::<u8>().1;
           RegSetValueExW(hkey, lpvaluename, 0u32, dw_type, Some(val))?;
           Ok(())
         } else {
@@ -188,7 +190,13 @@ pub fn write_registry(
       }
       REG_DWORD => {
         if let RegValueResult::Int(val) = reg_key_value {
-          RegSetValueExW(hkey, lpvaluename, 0u32, dw_type, Some(val.to_ne_bytes().as_ref()))?;
+          RegSetValueExW(
+            hkey,
+            lpvaluename,
+            0u32,
+            dw_type,
+            Some(val.to_ne_bytes().as_ref()),
+          )?;
           Ok(())
         } else {
           return Err(Error::new(HRESULT(4), HSTRING::default()));
@@ -200,9 +208,33 @@ pub fn write_registry(
     RegCloseKey(hkey)?;
 
     res
+  }
+}
+
+pub fn delete_registry(
+  reg_key_root: HkeyMap,
+  reg_path: &str,
+  reg_key_name: &str,
+) -> Result<(), Error> {
+  let reg_key_root = match reg_key_root {
+    HkeyMap::HKCU => HKEY_CURRENT_USER,
+    HkeyMap::HKLM => HKEY_LOCAL_MACHINE,
+    HkeyMap::HKCR => HKEY_CLASSES_ROOT,
   };
 
-  result
+  unsafe {
+    let mut hkey = HKEY::default();
+    let (lpsubkey, _) = reg_path.into_pcwstr();
+    let (lpvaluename, _) = reg_key_name.into_pcwstr();
+
+    RegOpenKeyExW(reg_key_root, lpsubkey, 0, KEY_ALL_ACCESS, &mut hkey as *mut _)?;
+
+    RegDeleteKeyValueW(hkey, lpsubkey, lpvaluename)?;
+
+    RegCloseKey(hkey)?;
+
+    Ok(())
+  }
 }
 
 /**
