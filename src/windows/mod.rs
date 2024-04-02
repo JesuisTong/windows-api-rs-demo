@@ -5,7 +5,10 @@ use windows::{
   Win32::{
     Foundation::HWND,
     System::Registry::{
-      RegCloseKey, RegDeleteKeyValueW, RegGetValueW, RegOpenKeyExW, RegSetValueExW, HKEY, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_ALL_ACCESS, KEY_READ, KEY_WRITE, REG_BINARY, REG_DWORD, REG_EXPAND_SZ, REG_MULTI_SZ, REG_SZ, REG_VALUE_TYPE, RRF_RT_REG_BINARY, RRF_RT_REG_DWORD, RRF_RT_REG_EXPAND_SZ, RRF_RT_REG_MULTI_SZ, RRF_RT_REG_SZ
+      RegCloseKey, RegDeleteValueW, RegGetValueW, RegOpenKeyExW, RegSetValueExW, HKEY,
+      HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_READ, KEY_WRITE, REG_BINARY,
+      REG_DWORD, REG_EXPAND_SZ, REG_MULTI_SZ, REG_SZ, REG_VALUE_TYPE, RRF_RT_REG_BINARY,
+      RRF_RT_REG_DWORD, RRF_RT_REG_EXPAND_SZ, RRF_RT_REG_MULTI_SZ, RRF_RT_REG_SZ,
     },
     UI::WindowsAndMessaging::{
       FindWindowW, SetWindowPos, ShowWindow, SWP_NOMOVE, SWP_NOSIZE, SWP_SHOWWINDOW, SW_RESTORE,
@@ -96,7 +99,7 @@ pub fn read_registry(
         )?;
         let len = (pcbdata as usize - 1) / 2;
         Ok(Some(RegValueResult::Str(String::from_utf16_lossy(
-          &pvdata[..len].to_vec(),
+          &pvdata[..len],
         ))))
       }
       RRF_RT_REG_BINARY => {
@@ -227,9 +230,9 @@ pub fn delete_registry(
     let (lpsubkey, _) = reg_path.into_pcwstr();
     let (lpvaluename, _) = reg_key_name.into_pcwstr();
 
-    RegOpenKeyExW(reg_key_root, lpsubkey, 0, KEY_ALL_ACCESS, &mut hkey as *mut _)?;
+    RegOpenKeyExW(reg_key_root, lpsubkey, 0, KEY_WRITE, &mut hkey as *mut _)?;
 
-    RegDeleteKeyValueW(hkey, lpsubkey, lpvaluename)?;
+    RegDeleteValueW(hkey, lpvaluename)?;
 
     RegCloseKey(hkey)?;
 

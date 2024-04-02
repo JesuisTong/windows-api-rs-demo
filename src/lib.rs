@@ -1,7 +1,8 @@
 #![deny(clippy::all)]
+#![allow(clippy::upper_case_acronyms,clippy::enum_variant_names)]
 use napi::{
   assert_type_of,
-  bindgen_prelude::{FromNapiValue, Null, Buffer,ToNapiValue},
+  bindgen_prelude::{Buffer, FromNapiValue, Null, ToNapiValue},
   JsBuffer, JsNumber, JsObject, JsString, JsUnknown, NapiRaw, NapiValue, Result, ValueType,
 };
 use napi_derive::napi;
@@ -120,8 +121,10 @@ impl ToNapiValue for windows::RegValueResult {
   unsafe fn to_napi_value(env: napi::sys::napi_env, val: Self) -> Result<napi::sys::napi_value> {
     match val {
       windows::RegValueResult::Int(num) => unsafe { ToNapiValue::to_napi_value(env, num) },
-      windows::RegValueResult::Str(str) => unsafe { ToNapiValue::to_napi_value(env, &str) },
-      windows::RegValueResult::VecU8(vec_u8) => unsafe { Buffer::to_napi_value(env, Buffer::from(vec_u8)) },
+      windows::RegValueResult::Str(str) => unsafe { ToNapiValue::to_napi_value(env, str) },
+      windows::RegValueResult::VecU8(vec_u8) => unsafe {
+        Buffer::to_napi_value(env, Buffer::from(vec_u8))
+      },
       windows::RegValueResult::Null => unsafe { Null::to_napi_value(env, Null) },
     }
   }
@@ -145,7 +148,7 @@ pub fn read_registry(
     Err(err) => {
       eprintln!("read_registry error: {:?}", err.message().to_string());
       Ok(windows::RegValueResult::Null)
-    },
+    }
   }
 }
 
