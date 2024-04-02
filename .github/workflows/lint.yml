@@ -16,7 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: true
       - name: Setup node
         uses: actions/setup-node@v4
         with:
@@ -27,9 +30,6 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
-
-      - name: Install dependencies
-        run: pnpm install
 
       - name: ESLint
         run: pnpm run lint

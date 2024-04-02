@@ -19,6 +19,7 @@ pub fn get_process_exists(process_name: String) -> bool {
   sys.processes_by_exact_name(&process_name).count() != 0
 }
 
+#[cfg(target_os = "windows")]
 impl FromNapiValue for windows::HkeyMap {
   unsafe fn from_napi_value(
     env: napi::sys::napi_env,
@@ -38,6 +39,7 @@ impl FromNapiValue for windows::HkeyMap {
   }
 }
 
+#[cfg(target_os = "windows")]
 impl FromNapiValue for windows::RegType {
   unsafe fn from_napi_value(
     env: napi::sys::napi_env,
@@ -59,6 +61,7 @@ impl FromNapiValue for windows::RegType {
   }
 }
 
+#[cfg(target_os = "windows")]
 impl FromNapiValue for windows::RegValueResult {
   unsafe fn from_napi_value(
     env: napi::sys::napi_env,
@@ -117,6 +120,7 @@ impl FromNapiValue for windows::RegValueResult {
   }
 }
 
+#[cfg(target_os = "windows")]
 impl ToNapiValue for windows::RegValueResult {
   unsafe fn to_napi_value(env: napi::sys::napi_env, val: Self) -> Result<napi::sys::napi_value> {
     match val {
