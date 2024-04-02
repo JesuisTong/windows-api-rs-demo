@@ -1,5 +1,5 @@
 #![deny(clippy::all)]
-#![allow(clippy::upper_case_acronyms,clippy::enum_variant_names)]
+#![allow(clippy::upper_case_acronyms, clippy::enum_variant_names)]
 use napi::{
   assert_type_of,
   bindgen_prelude::{Buffer, FromNapiValue, Null, ToNapiValue},
