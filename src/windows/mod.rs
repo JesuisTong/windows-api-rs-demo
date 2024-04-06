@@ -249,7 +249,7 @@ pub fn show_window_force(window_title: &str) {
     let (pcwstr, _) = window_title.into_pcwstr();
     let hwnd = FindWindowW(None, pcwstr);
     println!("hwnd: {:?}", hwnd);
-    let _ = SetWindowPos(
+    SetWindowPos(
       hwnd,
       HWND(-1),
       0,
@@ -258,12 +258,12 @@ pub fn show_window_force(window_title: &str) {
       0,
       SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW,
     )
-    .is_ok();
+    .unwrap();
     ShowWindow(hwnd, SW_RESTORE);
     ShowWindow(hwnd, SW_RESTORE);
     ShowWindow(hwnd, SW_SHOW);
     ShowWindow(hwnd, SW_SHOW);
-    let _ = SetWindowPos(
+    SetWindowPos(
       hwnd,
       HWND(-2),
       0,
@@ -272,6 +272,6 @@ pub fn show_window_force(window_title: &str) {
       0,
       SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW,
     )
-    .is_ok();
+    .unwrap();
   }
 }
