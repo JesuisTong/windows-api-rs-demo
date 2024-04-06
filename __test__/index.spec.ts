@@ -9,6 +9,12 @@ if (process.platform === 'win32') {
     t.is(res, 'test')
   })
 
+  test('write read reg path not exists', (t) => {
+    writeRegistry(0, 'SOFTWARE\\4e68d05e-43d6-5a2a-b5c0-61957baec133\\fuck', 'test', 0, 'test')
+    const res = readRegistry(0, 'SOFTWARE\\4e68d05e-43d6-5a2a-b5c0-61957baec133\\fuck', 'test', 0)
+    t.is(res, 'test')
+  })
+
   test('delete reg', (t) => {
     writeRegistry(0, 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run', 'test', 0, 'test')
     deleteRegistry(0, 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run', 'test')
