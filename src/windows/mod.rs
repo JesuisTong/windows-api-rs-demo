@@ -172,12 +172,10 @@ pub fn write_registry(
     let res = match dw_type {
       REG_SZ | REG_EXPAND_SZ | REG_MULTI_SZ => {
         if let RegValueResult::Str(val) = reg_key_value {
-          let val = OsStr::new(&val)
-            .encode_wide()
-            .chain(std::iter::once(0))
-            .collect::<Vec<_>>();
-          let val = val.align_to::<u8>().1;
-          RegSetValueExW(hkey, lpvaluename, 0u32, dw_type, Some(val))?;
+          let (_, lpdata) = val[..].into_pcwstr();
+          let lpdata = lpdata.align_to::<u8>().1;
+
+          RegSetValueExW(hkey, lpvaluename, 0u32, dw_type, Some(lpdata))?;
           Ok(())
         } else {
           return Err(Error::new(HRESULT(1), HSTRING::default()));
