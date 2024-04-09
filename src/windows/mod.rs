@@ -1,5 +1,3 @@
-use std::{ffi::OsStr, os::windows::ffi::OsStrExt};
-
 use windows::{
   core::{Error, HRESULT, HSTRING, PCWSTR},
   Win32::{
@@ -228,13 +226,19 @@ pub fn delete_registry(
     let (lpsubkey, _) = reg_path.into_pcwstr();
     let (lpvaluename, _) = reg_key_name.into_pcwstr();
 
-    RegOpenKeyExW(reg_key_root, lpsubkey, 0, KEY_WRITE, &mut hkey as *mut _)?;
+    let r = {
+      RegOpenKeyExW(reg_key_root, lpsubkey, 0, KEY_WRITE, &mut hkey as *mut _)?;
 
-    RegDeleteValueW(hkey, lpvaluename)?;
+      RegDeleteValueW(hkey, lpvaluename)
+    };
 
+    // 保证能走到CloseKey
     RegCloseKey(hkey)?;
 
-    Ok(())
+    match r {
+      Ok(_) => Ok(()),
+      Err(err) => Err(err),
+    }
   }
 }
 

@@ -4,14 +4,20 @@ import { readRegistry, writeRegistry, deleteRegistry, getProcessExists } from '.
 
 if (process.platform === 'win32') {
   test('write proxy', (t) => {
-    writeRegistry(0, 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', 'ProxyServer', 0, '127.0.0.1:29613');
-    const res = readRegistry(0, 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', 'ProxyServer', 0);
+    writeRegistry(
+      0,
+      'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Internet Settings',
+      'ProxyServer',
+      0,
+      '127.0.0.1:29613',
+    )
+    const res = readRegistry(0, 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', 'ProxyServer', 0)
     t.is(res, '127.0.0.1:29613')
   })
 
   test('delete proxy', (t) => {
-    deleteRegistry(0, 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', 'ProxyServer');
-    const res = readRegistry(0, 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', 'ProxyServer', 0);
+    deleteRegistry(0, 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', 'ProxyServer')
+    const res = readRegistry(0, 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', 'ProxyServer', 0)
     t.is(res, null)
   })
 
