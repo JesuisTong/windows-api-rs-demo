@@ -10,6 +10,7 @@ Array.from({ length: 500 }).forEach((_, idx) => {
   )
   const d = readRegistry(0, 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', '127.0.0.1:29613', 0)
   if (d) {
+    // eslint-disable-next-line
     console.log('readRegistry', idx, d)
     deleteRegistry(0, 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Internet Settings', '127.0.0.1:29613')
     process.exit()
