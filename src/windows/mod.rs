@@ -78,7 +78,8 @@ pub fn read_registry(
     let mut hkey = HKEY::default();
     let mut pdwtype: REG_VALUE_TYPE = Default::default();
     let (lpsubkey, _) = reg_path.into_pcwstr();
-    let (lpvalue, _) = reg_key_name.into_pcwstr();
+    // ! 由于muted，需要设置成不同的变量名
+    let (lpvalue, __) = reg_key_name.into_pcwstr();
 
     RegOpenKeyExW(reg_key_root, lpsubkey, 0, KEY_READ, &mut hkey as *mut _)?;
 
@@ -163,14 +164,15 @@ pub fn write_registry(
   unsafe {
     let mut hkey = HKEY::default();
     let (lpsubkey, _) = reg_path.into_pcwstr();
-    let (lpvaluename, _) = reg_key_name.into_pcwstr();
+    // ! 由于muted，需要设置成不同的变量名
+    let (lpvaluename, __) = reg_key_name.into_pcwstr();
 
     RegOpenKeyExW(reg_key_root, lpsubkey, 0, KEY_WRITE, &mut hkey as *mut _)?;
 
     let res = match dw_type {
       REG_SZ | REG_EXPAND_SZ | REG_MULTI_SZ => {
         if let RegValueResult::Str(val) = reg_key_value {
-          let (_, lpdata) = val[..].into_pcwstr();
+          let (___, lpdata) = val[..].into_pcwstr();
           let lpdata = lpdata.align_to::<u8>().1;
 
           RegSetValueExW(hkey, lpvaluename, 0u32, dw_type, Some(lpdata))?;
@@ -224,7 +226,8 @@ pub fn delete_registry(
   unsafe {
     let mut hkey = HKEY::default();
     let (lpsubkey, _) = reg_path.into_pcwstr();
-    let (lpvaluename, _) = reg_key_name.into_pcwstr();
+    // ! 由于muted，需要设置成不同的变量名
+    let (lpvaluename, __) = reg_key_name.into_pcwstr();
 
     let r = {
       RegOpenKeyExW(reg_key_root, lpsubkey, 0, KEY_WRITE, &mut hkey as *mut _)?;
