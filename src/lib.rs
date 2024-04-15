@@ -19,6 +19,15 @@ pub fn get_process_exists(process_name: String) -> bool {
   sys.processes_by_exact_name(&process_name).count() != 0
 }
 
+#[napi]
+pub fn kill_process(process_name: String) {
+  let mut sys = System::new();
+  sys.refresh_processes_specifics(ProcessRefreshKind::new());
+  sys.processes_by_exact_name(&process_name).for_each(|p| {
+    p.kill();
+  });
+}
+
 #[cfg(target_os = "windows")]
 impl FromNapiValue for windows::HkeyMap {
   unsafe fn from_napi_value(
