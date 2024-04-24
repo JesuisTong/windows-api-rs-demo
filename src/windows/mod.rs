@@ -249,7 +249,7 @@ pub fn delete_registry(
  * 强制窗体显示
  * TODO: 窗体可以响应点击事件
  */
-pub fn show_window_force(window_title: &str) {
+pub fn show_window_force(window_title: &str) -> Result<(), Error> {
   unsafe {
     let (pcwstr, _) = window_title.into_pcwstr();
     let hwnd = FindWindowW(None, pcwstr);
@@ -262,8 +262,7 @@ pub fn show_window_force(window_title: &str) {
       0,
       0,
       SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW,
-    )
-    .unwrap();
+    )?;
     ShowWindow(hwnd, SW_RESTORE);
     ShowWindow(hwnd, SW_RESTORE);
     ShowWindow(hwnd, SW_SHOW);
@@ -276,7 +275,7 @@ pub fn show_window_force(window_title: &str) {
       0,
       0,
       SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW,
-    )
-    .unwrap();
+    )?;
   }
+  Ok(())
 }
