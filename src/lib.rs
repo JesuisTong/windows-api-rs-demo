@@ -210,7 +210,10 @@ pub fn show_window_by_title(window_title: String) -> Result<()> {
   windows::show_window_force(&window_title).map_err(|err| {
     napi::Error::new(
       napi::Status::FunctionExpected,
-      format!("show_window_by_title error: {:?}", err.message().to_string()),
+      format!(
+        "show_window_by_title error: {:?}",
+        err.message().to_string()
+      ),
     )
   })
 }
