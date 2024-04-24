@@ -206,6 +206,14 @@ pub fn delete_registry(
 
 #[cfg(target_os = "windows")]
 #[napi]
-pub fn show_window_by_title(window_title: String) {
-  windows::show_window_force(&window_title);
+pub fn show_window_by_process_id(window_pid: u32) -> Result<()> {
+  windows::show_window_force(window_pid).map_err(|err| {
+    napi::Error::new(
+      napi::Status::FunctionExpected,
+      format!(
+        "show_window_by_process_id error: {:?}",
+        err.message().to_string()
+      ),
+    )
+  })
 }

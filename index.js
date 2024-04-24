@@ -271,11 +271,12 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { getProcessExists, killProcess, readRegistry, writeRegistry, deleteRegistry, showWindowByTitle } = nativeBinding
+const { getProcessExists, killProcess, readRegistry, writeRegistry, deleteRegistry, showWindowByProcessId } =
+  nativeBinding
 
 module.exports.getProcessExists = getProcessExists
 module.exports.killProcess = killProcess
 module.exports.readRegistry = readRegistry
 module.exports.writeRegistry = writeRegistry
 module.exports.deleteRegistry = deleteRegistry
-module.exports.showWindowByTitle = showWindowByTitle
+module.exports.showWindowByProcessId = showWindowByProcessId

@@ -1,7 +1,7 @@
 use windows::{
   core::{Error, HRESULT, HSTRING, PCWSTR},
   Win32::{
-    Foundation::HWND,
+    Foundation::{BOOL, HWND, LPARAM},
     System::Registry::{
       RegCloseKey, RegDeleteValueW, RegGetValueW, RegOpenKeyExW, RegSetValueExW, HKEY,
       HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_READ, KEY_WRITE, REG_BINARY,
@@ -9,8 +9,8 @@ use windows::{
       RRF_RT_REG_DWORD, RRF_RT_REG_EXPAND_SZ, RRF_RT_REG_MULTI_SZ, RRF_RT_REG_SZ,
     },
     UI::WindowsAndMessaging::{
-      FindWindowW, SetWindowPos, ShowWindow, SWP_NOMOVE, SWP_NOSIZE, SWP_SHOWWINDOW, SW_RESTORE,
-      SW_SHOW,
+      EnumWindows, GetWindow, GetWindowTextW, GetWindowThreadProcessId, SetWindowPos, ShowWindow,
+      GW_OWNER, SWP_NOMOVE, SWP_NOSIZE, SWP_SHOWWINDOW, SW_RESTORE, SW_SHOW,
     },
   },
 };
@@ -245,15 +245,55 @@ pub fn delete_registry(
   }
 }
 
+struct LparamData(u32, HWND);
+impl LparamData {
+  pub fn new(pid: u32) -> Self {
+    Self(pid, HWND::default())
+  }
+}
+
+unsafe extern "system" fn enum_window_proc(hwnd: HWND, lparam: LPARAM) -> BOOL {
+  let data = &mut *(lparam.0 as *mut LparamData);
+  let mut pid: u32 = 0u32;
+  GetWindowThreadProcessId(hwnd, Some(&mut pid));
+  let mut buf = [0;512];
+  let len = GetWindowTextW(hwnd, &mut buf ) as usize;
+  let text = String::from_utf16_lossy(&buf[..len]);
+  let owner = GetWindow(hwnd, GW_OWNER) == HWND::default();
+  println!("pid: input,{}  current,{} title:{text},,,{owner}", data.0, pid);
+  if data.0 == pid {
+    data.1 = hwnd;
+    false.into()
+  } else {
+    true.into()
+  }
+}
+
+fn get_hwnd_from_pid(pid: u32) -> Result<HWND, Error> {
+  let mut data = LparamData::new(pid);
+  let lparam = &mut data as *mut LparamData as isize;
+  unsafe {
+    EnumWindows(Some(enum_window_proc), LPARAM(lparam))?;
+  }
+  Ok(data.1)
+}
+
 /**
  * 强制窗体显示
  * TODO: 窗体可以响应点击事件
  */
-pub fn show_window_force(window_title: &str) {
+pub fn show_window_force(window_pid: u32) -> Result<(), Error> {
   unsafe {
-    let (pcwstr, _) = window_title.into_pcwstr();
-    let hwnd = FindWindowW(None, pcwstr);
-    println!("hwnd: {:?}", hwnd);
+    let hwnd = get_hwnd_from_pid(window_pid)?;
+    let mut buf = [0;512];
+    let len = GetWindowTextW(hwnd, &mut buf ) as usize;
+    let text = String::from_utf16_lossy(&buf[..len]);
+    println!("hwnd: {:?}, {}, title:{}", hwnd, window_pid, text);
+    if hwnd.0 == 0 {
+      // 无句柄直接返回
+      return Ok(());
+    }
+
     SetWindowPos(
       hwnd,
       HWND(-1),
@@ -262,11 +302,8 @@ pub fn show_window_force(window_title: &str) {
       0,
       0,
       SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW,
-    )
-    .unwrap();
+    )?;
     ShowWindow(hwnd, SW_RESTORE);
-    ShowWindow(hwnd, SW_RESTORE);
-    ShowWindow(hwnd, SW_SHOW);
     ShowWindow(hwnd, SW_SHOW);
     SetWindowPos(
       hwnd,
@@ -276,7 +313,8 @@ pub fn show_window_force(window_title: &str) {
       0,
       0,
       SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW,
-    )
-    .unwrap();
+    )?;
+
+    Ok(())
   }
 }

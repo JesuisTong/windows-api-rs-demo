@@ -19,4 +19,4 @@ export function writeRegistry(
   regKeyValue: unknown,
 ): void
 export function deleteRegistry(regKeyRoot: 0 | 1 | 2, regPath: string, regKeyName: string): void
-export function showWindowByTitle(windowTitle: string): void
+export function showWindowByProcessId(windowPid: number): void
