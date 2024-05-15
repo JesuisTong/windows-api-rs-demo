@@ -4,9 +4,10 @@ use windows::{
     Foundation::HWND,
     System::Registry::{
       RegCloseKey, RegDeleteValueW, RegGetValueW, RegOpenKeyExW, RegSetValueExW, HKEY,
-      HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_READ, KEY_WRITE, REG_BINARY,
-      REG_DWORD, REG_EXPAND_SZ, REG_MULTI_SZ, REG_SZ, REG_VALUE_TYPE, RRF_RT_REG_BINARY,
-      RRF_RT_REG_DWORD, RRF_RT_REG_EXPAND_SZ, RRF_RT_REG_MULTI_SZ, RRF_RT_REG_SZ,
+      HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE, KEY_ALL_ACCESS, KEY_READ,
+      KEY_WRITE, REG_BINARY, REG_DWORD, REG_EXPAND_SZ, REG_MULTI_SZ, REG_SZ, REG_VALUE_TYPE,
+      RRF_RT_REG_BINARY, RRF_RT_REG_DWORD, RRF_RT_REG_EXPAND_SZ, RRF_RT_REG_MULTI_SZ,
+      RRF_RT_REG_SZ,
     },
     UI::WindowsAndMessaging::{
       FindWindowW, SetWindowPos, ShowWindow, SWP_NOMOVE, SWP_NOSIZE, SWP_SHOWWINDOW, SW_RESTORE,
@@ -167,7 +168,13 @@ pub fn write_registry(
     // ! 由于muted，需要设置成不同的变量名
     let (lpvaluename, __) = reg_key_name.into_pcwstr();
 
-    RegOpenKeyExW(reg_key_root, lpsubkey, 0, KEY_WRITE, &mut hkey as *mut _)?;
+    RegOpenKeyExW(
+      reg_key_root,
+      lpsubkey,
+      0,
+      KEY_ALL_ACCESS,
+      &mut hkey as *mut _,
+    )?;
 
     let res = match dw_type {
       REG_SZ | REG_EXPAND_SZ | REG_MULTI_SZ => {

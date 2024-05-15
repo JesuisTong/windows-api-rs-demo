@@ -6,6 +6,7 @@ use napi::{
   JsBuffer, JsNumber, JsObject, JsString, JsUnknown, NapiRaw, NapiValue, Result, ValueType,
 };
 use napi_derive::napi;
+use regex::Regex;
 use sysinfo::{ProcessRefreshKind, System};
 
 #[cfg(target_os = "windows")]
@@ -13,10 +14,22 @@ use sysinfo::{ProcessRefreshKind, System};
 mod windows;
 
 #[napi]
-pub fn get_process_exists(process_name: String) -> bool {
+pub fn get_process_exists(process_name: String, exact: bool) -> bool {
   let mut sys = System::new();
   sys.refresh_processes_specifics(ProcessRefreshKind::new());
-  sys.processes_by_exact_name(&process_name).count() != 0
+  if exact {
+    sys.processes_by_exact_name(&process_name).count() != 0
+  } else {
+    let str = format!(r"(?i){}", &process_name);
+    let reg = Regex::new(&str).unwrap();
+
+    sys
+      .processes()
+      .values()
+      .filter(move |val| reg.is_match(val.name()))
+      .count()
+      != 0
+  }
 }
 
 #[napi]
