@@ -98,7 +98,7 @@ pub fn write_registry(
     HkeyMap::HKCR => CLASSES_ROOT,
   };
 
-  let key = reg_key_root.open(reg_path)?;
+  let key = reg_key_root.create(reg_path)?;
 
   match reg_key_value {
     RegValueResult::Str(str) => {
@@ -128,7 +128,7 @@ pub fn delete_registry(reg_key_root: HkeyMap, reg_path: &str, reg_key_name: &str
     HkeyMap::HKCR => CLASSES_ROOT,
   };
 
-  let key = reg_key_root.open(reg_path)?;
+  let key = reg_key_root.create(reg_path)?;
 
   key.remove_value(reg_key_name)?;
 
