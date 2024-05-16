@@ -17,7 +17,7 @@ sysinfo = "0.30.7"
 regex = "1.10.4"
 
 [target."cfg(target_os = \"windows\")".dependencies.windows]
-version = "0.52"
+version = "0.56"
 features = [
     "Win32_Globalization",
     "Win32_System_Diagnostics",
@@ -29,6 +29,8 @@ features = [
     "Win32_Storage_FileSystem",
     "Win32_UI_WindowsAndMessaging",
 ]
+[target."cfg(target_os = \"windows\")".dependencies.windows-registry]
+version = "0.1"
 
 [build-dependencies]
 napi-build = "2.0"

@@ -72,7 +72,7 @@ impl FromNapiValue for windows::RegType {
     match num {
       0 => Ok(windows::RegType::RegSz),
       1 => Ok(windows::RegType::RegExpandSz),
-      2 => Ok(windows::RegType::RegMultiSz),
+      // 2 => Ok(windows::RegType::RegMultiSz),
       3 => Ok(windows::RegType::RegBinary),
       4 => Ok(windows::RegType::RegDword),
       _ => Err(napi::Error::new(
@@ -184,14 +184,13 @@ pub fn write_registry(
   #[napi(ts_arg_type = "0|1|2")] reg_key_root: windows::HkeyMap,
   reg_path: String,
   reg_key_name: String,
-  #[napi(ts_arg_type = "0|1|2|3|4")] reg_key_value_type: windows::RegType,
+  #[napi(ts_arg_type = "0|1|2|3|4")] _reg_key_value_type: windows::RegType,
   #[napi(ts_arg_type = "unknown")] reg_key_value: windows::RegValueResult,
 ) -> Result<()> {
   windows::write_registry(
     reg_key_root,
     &reg_path,
     &reg_key_name,
-    reg_key_value_type,
     reg_key_value,
   )
   .map_err(|err| {
