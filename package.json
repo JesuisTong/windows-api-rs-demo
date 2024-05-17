@@ -19,7 +19,7 @@
     "index.js"
   ],
   "napi": {
-    "name": "fepro-addon",
+    "name": "windows-api-rs",
     "triples": {
       "defaults": true,
       "additional": [
