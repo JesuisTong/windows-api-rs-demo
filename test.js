@@ -1,6 +1,6 @@
 const { writeRegistry, deleteRegistry, readRegistry, getProcessExists } = require('./index')
 
-const INTERNET_SETTINGS = 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Internet Settings';
+const INTERNET_SETTINGS = 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Internet Settings'
 
 // Array.from({ length: 1 }).forEach((_, idx) => {
 //   writeRegistry(0, INTERNET_SETTINGS, 'ProxyEnable', 4, 0);
@@ -22,19 +22,19 @@ const INTERNET_SETTINGS = 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Interne
 //   //   process.exit()
 //   // }
 // })
-console.log('getProcessExists', getProcessExists('code', false));
+console.log('getProcessExists', getProcessExists('code', false))
 const clearGlobalProxyReg = async () => {
   try {
-      console.log(writeRegistry(0, INTERNET_SETTINGS, 'FFF', ['1','2']));
-      console.log(readRegistry(0, INTERNET_SETTINGS, 'FFF'));
-      console.log(readRegistry(0, INTERNET_SETTINGS, 'ProxyEnable'));
-      console.log(readRegistry(0, INTERNET_SETTINGS, 'MaxConnectionsPerServer'));
-      console.log(readRegistry(0, INTERNET_SETTINGS, 'ZonesSecurityUpgrade'));
-      writeRegistry(0, INTERNET_SETTINGS, 'ProxyEnable', 0);
-      deleteRegistry(0, INTERNET_SETTINGS, 'ProxyServer');
+    console.log(writeRegistry(0, INTERNET_SETTINGS, 'FFF', ['1', '2']))
+    console.log(readRegistry(0, INTERNET_SETTINGS, 'FFF'))
+    console.log(readRegistry(0, INTERNET_SETTINGS, 'ProxyEnable'))
+    console.log(readRegistry(0, INTERNET_SETTINGS, 'MaxConnectionsPerServer'))
+    console.log(readRegistry(0, INTERNET_SETTINGS, 'ZonesSecurityUpgrade'))
+    writeRegistry(0, INTERNET_SETTINGS, 'ProxyEnable', 0)
+    deleteRegistry(0, INTERNET_SETTINGS, 'ProxyServer')
   } catch (error) {
-      console.error('clearGlobalProxyReg error', error.message);
+    console.error('clearGlobalProxyReg error', error.message)
   }
-};
-clearGlobalProxyReg();
-clearGlobalProxyReg();
+}
+clearGlobalProxyReg()
+clearGlobalProxyReg()
