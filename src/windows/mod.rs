@@ -16,19 +16,11 @@ pub enum HkeyMap {
   HKCR,
 }
 
-pub enum RegType {
-  RegSz,
-  RegExpandSz,
-  // RegMultiSz,
-  RegBinary,
-  RegDword,
-}
-
 #[derive(Debug)]
 pub enum RegValueResult {
   Int(i32),
   Str(String),
-  // VecStr(Vec<&'a str>),
+  VecStr(Vec<String>),
   VecU8(Vec<u8>),
   Null,
 }
@@ -52,7 +44,6 @@ pub fn read_registry(
   reg_key_root: HkeyMap,
   reg_path: &str,
   reg_key_name: &str,
-  reg_key_value_type: RegType,
 ) -> Result<Option<RegValueResult>> {
   let reg_key_root = match reg_key_root {
     HkeyMap::HKCU => CURRENT_USER,
@@ -62,26 +53,17 @@ pub fn read_registry(
 
   let key = reg_key_root.open(reg_path)?;
 
-  match reg_key_value_type {
-    RegType::RegSz => {
-      let value = key.get_string(reg_key_name)?;
-      Ok(Some(RegValueResult::Str(value)))
-    }
-    RegType::RegExpandSz => {
-      let value = key.get_string(reg_key_name)?;
-      Ok(Some(RegValueResult::Str(value)))
-    }
-    // RegType::RegMultiSz => {
-    //   let value = key.get_multi_string(reg_key_name)?;
-    //   Ok(Some(RegValueResult::VecStr(value)))
-    // }
-    RegType::RegBinary => {
-      let value = key.get_bytes(reg_key_name)?;
-      Ok(Some(RegValueResult::VecU8(value)))
-    }
-    RegType::RegDword => {
-      let value = key.get_u32(reg_key_name)?;
-      Ok(Some(RegValueResult::Int(value as i32)))
+  let value = key.get_value(reg_key_name)?;
+
+  match value {
+    Value::U32(num) => Ok(Some(RegValueResult::Int(num as i32))),
+    Value::U64(num) => Ok(Some(RegValueResult::Int(num as i32))),
+    Value::Bytes(bytes) => Ok(Some(RegValueResult::VecU8(bytes))),
+    Value::MultiString(vec_str) => Ok(Some(RegValueResult::VecStr(vec_str))),
+    Value::String(str) => Ok(Some(RegValueResult::Str(str))),
+    Value::Unknown(unknown) => {
+      println!("Unknown: {:?}", unknown);
+      Ok(Some(RegValueResult::Null))
     }
   }
 }
@@ -107,9 +89,10 @@ pub fn write_registry(
     RegValueResult::Int(num) => {
       key.set_u32(reg_key_name, num as u32)?;
     }
-    // RegValueResult::VecStr(vecStr) => {
-    //   key.set_multi_string(reg_key_name, vecStr)?;
-    // }
+    RegValueResult::VecStr(vec_str) => {
+      let v = vec_str.iter().map(|s| s.as_str()).collect::<Vec<&str>>();
+      key.set_multi_string(reg_key_name, &v)?;
+    }
     RegValueResult::VecU8(vec_u8) => {
       key.set_bytes(reg_key_name, &vec_u8)?;
     }

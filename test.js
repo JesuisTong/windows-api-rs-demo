@@ -22,11 +22,15 @@ const INTERNET_SETTINGS = 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Interne
 //   //   process.exit()
 //   // }
 // })
-console.log('getProcessExists', getProcessExists('ts3client', false));
+console.log('getProcessExists', getProcessExists('code', false));
 const clearGlobalProxyReg = async () => {
   try {
-      readRegistry(0, INTERNET_SETTINGS, 'ProxyEnable', 4);
-      writeRegistry(0, INTERNET_SETTINGS, 'ProxyEnable', 4, 0);
+      console.log(writeRegistry(0, INTERNET_SETTINGS, 'FFF', ['1','2']));
+      console.log(readRegistry(0, INTERNET_SETTINGS, 'FFF'));
+      console.log(readRegistry(0, INTERNET_SETTINGS, 'ProxyEnable'));
+      console.log(readRegistry(0, INTERNET_SETTINGS, 'MaxConnectionsPerServer'));
+      console.log(readRegistry(0, INTERNET_SETTINGS, 'ZonesSecurityUpgrade'));
+      writeRegistry(0, INTERNET_SETTINGS, 'ProxyEnable', 0);
       deleteRegistry(0, INTERNET_SETTINGS, 'ProxyServer');
   } catch (error) {
       console.error('clearGlobalProxyReg error', error.message);

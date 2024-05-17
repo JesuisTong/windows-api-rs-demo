@@ -62,28 +62,6 @@ impl FromNapiValue for windows::HkeyMap {
 }
 
 #[cfg(target_os = "windows")]
-impl FromNapiValue for windows::RegType {
-  unsafe fn from_napi_value(
-    env: napi::sys::napi_env,
-    napi_val: napi::sys::napi_value,
-  ) -> Result<Self> {
-    let num = JsNumber::from_napi_value(env, napi_val)?;
-    let num = num.get_int32()?;
-    match num {
-      0 => Ok(windows::RegType::RegSz),
-      1 => Ok(windows::RegType::RegExpandSz),
-      // 2 => Ok(windows::RegType::RegMultiSz),
-      3 => Ok(windows::RegType::RegBinary),
-      4 => Ok(windows::RegType::RegDword),
-      _ => Err(napi::Error::new(
-        napi::Status::InvalidArg,
-        format!("invalid RegType {num}"),
-      )),
-    }
-  }
-}
-
-#[cfg(target_os = "windows")]
 impl FromNapiValue for windows::RegValueResult {
   unsafe fn from_napi_value(
     env: napi::sys::napi_env,
@@ -114,6 +92,19 @@ impl FromNapiValue for windows::RegValueResult {
       if bool {
         let v = JsBuffer::from_raw(env, obj.raw())?;
         return Ok(windows::RegValueResult::VecU8(v.into_value()?.to_vec()));
+      }
+      let bool = obj.is_array()?;
+      if bool {
+        // convert jsObject to vec<String>
+        let cnt = obj.get_array_length()?;
+        // map to get string
+        let vec_str = (0..cnt)
+          .map(|i| {
+            let js_str = obj.get_element::<napi::JsString>(i).unwrap();
+            js_str.into_utf8().unwrap().as_str().unwrap().to_string()
+          })
+          .collect::<Vec<String>>();
+        return Ok(windows::RegValueResult::VecStr(vec_str));
       }
       return Err(napi::Error::new(
         napi::Status::InvalidArg,
@@ -151,6 +142,9 @@ impl ToNapiValue for windows::RegValueResult {
       windows::RegValueResult::VecU8(vec_u8) => unsafe {
         Buffer::to_napi_value(env, Buffer::from(vec_u8))
       },
+      windows::RegValueResult::VecStr(vec_str) => unsafe {
+        ToNapiValue::to_napi_value(env, vec_str)
+      },
       windows::RegValueResult::Null => unsafe { Null::to_napi_value(env, Null) },
     }
   }
@@ -162,9 +156,8 @@ pub fn read_registry(
   #[napi(ts_arg_type = "0|1|2")] reg_key_root: windows::HkeyMap,
   reg_path: String,
   reg_key_name: String,
-  #[napi(ts_arg_type = "0|1|2|3|4")] reg_key_value_type: windows::RegType,
 ) -> Result<windows::RegValueResult> {
-  match windows::read_registry(reg_key_root, &reg_path, &reg_key_name, reg_key_value_type) {
+  match windows::read_registry(reg_key_root, &reg_path, &reg_key_name) {
     Ok(result) => {
       if let Some(result) = result {
         return Ok(result);
@@ -184,16 +177,9 @@ pub fn write_registry(
   #[napi(ts_arg_type = "0|1|2")] reg_key_root: windows::HkeyMap,
   reg_path: String,
   reg_key_name: String,
-  #[napi(ts_arg_type = "0|1|2|3|4")] _reg_key_value_type: windows::RegType,
   #[napi(ts_arg_type = "unknown")] reg_key_value: windows::RegValueResult,
 ) -> Result<()> {
-  windows::write_registry(
-    reg_key_root,
-    &reg_path,
-    &reg_key_name,
-    reg_key_value,
-  )
-  .map_err(|err| {
+  windows::write_registry(reg_key_root, &reg_path, &reg_key_name, reg_key_value).map_err(|err| {
     napi::Error::new(
       napi::Status::FunctionExpected,
       format!("write_registry error: {:?}", err.message().to_string()),
