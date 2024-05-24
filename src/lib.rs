@@ -157,18 +157,18 @@ pub fn read_registry(
   reg_path: String,
   reg_key_name: String,
 ) -> Result<windows::RegValueResult> {
-  match windows::read_registry(reg_key_root, &reg_path, &reg_key_name) {
-    Ok(result) => {
-      if let Some(result) = result {
-        return Ok(result);
-      }
-      Ok(windows::RegValueResult::Null)
-    }
-    Err(err) => {
+  windows::read_registry(reg_key_root, &reg_path, &reg_key_name).map_or_else(
+    |err| {
       eprintln!("read_registry error: {:?}", err.message().to_string());
       Ok(windows::RegValueResult::Null)
-    }
-  }
+    },
+    |v| {
+      if let Some(v) = v {
+        return Ok(v);
+      }
+      Ok(windows::RegValueResult::Null)
+    },
+  )
 }
 
 #[cfg(target_os = "windows")]
